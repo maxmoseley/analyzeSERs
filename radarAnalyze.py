@@ -15,11 +15,11 @@ if __name__ == '__main__':
     
     RadarFile = "Data/2018-08-30 Radar SERs Data.xlsx"
     ResultsFile = "Results/%s-%s-%s Radar SERs Analysis %s%s.xlsx" % (strftime("%Y"),strftime("%m"),strftime("%d"),strftime("%H"),strftime("%M"))
-    writer = pd.ExcelWriter(ResultsFile, engine='openpyxl')
+    writer = pd.ExcelWriter(ResultsFile, engine='xlsxwriter')
     ResultsDF = pd.DataFrame()
     
     numVars = 3
-    numPoints = 12
+    numPoints = 10
     
     RadarDurs = pd.read_excel(RadarFile,sheet_name="Durations",index_col=0)
     RadarParams = pd.read_excel(RadarFile,sheet_name="Technical Parameters",index_col=0)
