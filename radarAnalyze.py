@@ -13,7 +13,7 @@ import os
 
 if __name__ == '__main__':
     
-    RadarFile = "Data/2018-08-30 Radar SERs Data.xlsx"
+    RadarFile = "Data/2018-09-13 Radar SERs Data.xlsx"
     ResultsFile = "Results/%s-%s-%s Radar SERs Analysis %s%s.xlsx" % (strftime("%Y"),strftime("%m"),strftime("%d"),strftime("%H"),strftime("%M"))
     writer = pd.ExcelWriter(ResultsFile, engine='xlsxwriter')
     ResultsDF = pd.DataFrame()
@@ -26,14 +26,18 @@ if __name__ == '__main__':
     RadarQuals = pd.read_excel(RadarFile,sheet_name="Other",index_col=0)
     
     for col in RadarDurs.columns:
-        RadarDurs["ln_%s"%col] = np.log(RadarDurs[col]).replace([np.inf, -np.inf],np.nan)
-    
+        RadarDurs["ln_(%s)"%col] = np.log(RadarDurs[col]).replace([np.inf, -np.inf],np.nan)
+        #RadarDurs["e^(%s)"%col] = np.exp(RadarDurs[col]).replace([np.inf, -np.inf],np.nan)
+
     for col in RadarParams.columns:
-        RadarParams["ln_%s"%col] = np.log(RadarParams[col]).replace([np.inf, -np.inf],np.nan)
-        RadarParams["%s^2"%col] = (RadarParams[col]**2).replace([np.inf, -np.inf],np.nan)
-        RadarParams["sqrt(%s)"%col] = np.sqrt(RadarParams[col]).replace([np.inf, -np.inf],np.nan)
+        RadarParams["ln_(%s)"%col] = np.log(RadarParams[col]).replace([np.inf, -np.inf],np.nan)
         RadarParams["e^(%s)"%col] = np.exp(RadarParams[col]).replace([np.inf, -np.inf],np.nan)
 
+    '''
+        RadarParams["(%s)^2"%col] = (RadarParams[col]**2).replace([np.inf, -np.inf],np.nan)
+        RadarParams["sqrt(%s)"%col] = np.sqrt(RadarParams[col]).replace([np.inf, -np.inf],np.nan)
+    '''
+        
 skipCases = 0
 testCases = 0
 
@@ -67,7 +71,8 @@ while numVars >= 1:
                         "Adj R-Squared": results.rsquared_adj,
                         "F Test": results.fvalue,
                         "Prob(F Test)": results.f_pvalue,
-                        "Degrees of Freedom": results.df_model,
+                        "Model Degrees of Freedom": results.df_model,
+                        "Residual Degrees of Freedom": results.df_resid,
                         "Parameter Coefficients": paramCoeff,
                         "Parameter p-values": paramPvals,
                         "Parameter t-values": paramTvals,
@@ -75,7 +80,14 @@ while numVars >= 1:
                         "Model MSE": results.mse_model,
                         "Residual MSE": results.mse_resid,
                         "Total MSE": results.mse_total,
-                        "Model Type": results.model.__class__.__name__
+                        "Model Type": results.model.__class__.__name__,
+                        "Sum of Squared Residuals": results.ssr,
+                        "Scale": results.scale,
+                        "AIC": results.aic,
+                        "BIC": results.bic,
+                        "Centered TSS": results.centered_tss,
+                        "Uncentered TSS": results.uncentered_tss,
+                        "Explained Sum of Squares": results.ess
                         }
                     
                     ResultsDF = ResultsDF.append(ResultVals, ignore_index=True)
