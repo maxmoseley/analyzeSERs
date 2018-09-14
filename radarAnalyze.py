@@ -15,7 +15,7 @@ if __name__ == '__main__':
     
     RadarFile = "Data/2018-09-13 Radar SERs Data.xlsx"
     ResultsFile = "Results/%s-%s-%s Radar SERs Analysis %s%s.xlsx" % (strftime("%Y"),strftime("%m"),strftime("%d"),strftime("%H"),strftime("%M"))
-    writer = pd.ExcelWriter(ResultsFile, engine='xlsxwriter')
+    writer = pd.ExcelWriter(ResultsFile, engine='openpyxl')
     ResultsDF = pd.DataFrame()
     
     numVars = 3
@@ -38,78 +38,78 @@ if __name__ == '__main__':
         RadarParams["sqrt(%s)"%col] = np.sqrt(RadarParams[col]).replace([np.inf, -np.inf],np.nan)
     '''
         
-skipCases = 0
-testCases = 0
-
-while numVars >= 1:
-    for i in RadarDurs.columns:
-        for param in list(combinations(RadarParams.columns,numVars)):
-            param = np.asarray(param)
-            testSet = pd.concat([RadarDurs[i],RadarParams[param]], axis=1)
-            testSet = testSet.replace([np.inf, -np.inf],np.nan)
-            testSet = testSet.dropna(axis='rows',how='any')
-            if not testSet.empty:
-                if len(testSet.index) >= numPoints:
-                    y = RadarDurs[i]
-                    x = RadarParams[param]
-                    x = sm.add_constant(x)
-                    model = sm.OLS(y,x,missing='drop')
-                    results = model.fit()
-                    paramCoeff = { str(key):value for key,value in results.params.to_dict().items() }
-                    paramPvals = { str(key):value for key,value in results.pvalues.to_dict().items() }
-                    paramTvals = { str(key):value for key,value in results.tvalues.to_dict().items() }
-                    paramStdErr = { str(key):value for key,value in results.bse.to_dict().items() }
-                    yDur = model.data.ynames
-                    xParams = [str(m) for m in model.data.xnames]
+    skipCases = 0
+    testCases = 0
+    
+    while numVars >= 1:
+        for i in RadarDurs.columns:
+            for param in list(combinations(RadarParams.columns,numVars)):
+                param = np.asarray(param)
+                testSet = pd.concat([RadarDurs[i],RadarParams[param]], axis=1)
+                testSet = testSet.replace([np.inf, -np.inf],np.nan)
+                testSet = testSet.dropna(axis='rows',how='any')
+                if not testSet.empty:
+                    if len(testSet.index) >= numPoints:
+                        y = RadarDurs[i]
+                        x = RadarParams[param]
+                        x = sm.add_constant(x)
+                        model = sm.OLS(y,x,missing='drop')
+                        results = model.fit()
+                        paramCoeff = { str(key):value for key,value in results.params.to_dict().items() }
+                        paramPvals = { str(key):value for key,value in results.pvalues.to_dict().items() }
+                        paramTvals = { str(key):value for key,value in results.tvalues.to_dict().items() }
+                        paramStdErr = { str(key):value for key,value in results.bse.to_dict().items() }
+                        yDur = model.data.ynames
+                        xParams = [str(m) for m in model.data.xnames]
+                        
+                        ResultVals = {
+                            "Number of X Variables": numVars,
+                            "Count of Usable Radars": results.nobs,
+                            "Duration": yDur,
+                            "Parameters": xParams,
+                            "R-Squared": results.rsquared,
+                            "Adj R-Squared": results.rsquared_adj,
+                            "F Test": results.fvalue,
+                            "Prob(F Test)": results.f_pvalue,
+                            "Model Degrees of Freedom": results.df_model,
+                            "Residual Degrees of Freedom": results.df_resid,
+                            "Parameter Coefficients": paramCoeff,
+                            "Parameter p-values": paramPvals,
+                            "Parameter t-values": paramTvals,
+                            "Parameter Std Err": paramStdErr,
+                            "Model MSE": results.mse_model,
+                            "Residual MSE": results.mse_resid,
+                            "Total MSE": results.mse_total,
+                            "Model Type": results.model.__class__.__name__,
+                            "Sum of Squared Residuals": results.ssr,
+                            "Scale": results.scale,
+                            "AIC": results.aic,
+                            "BIC": results.bic,
+                            "Centered TSS": results.centered_tss,
+                            "Uncentered TSS": results.uncentered_tss,
+                            "Explained Sum of Squares": results.ess
+                            }
+                        
+                        ResultsDF = ResultsDF.append(ResultVals, ignore_index=True)
+                        
+                        if not os.path.isfile(ResultsFile):
+                            ResultsDF.tail(1).to_excel(writer, header=ResultsDF.columns, index=False, sheet_name='Results')
+                        else:
+                            ResultsDF.tail(1).to_excel(writer, startrow=len(ResultsDF), header=False, index=False, sheet_name='Results')
+                        
+                        writer.save()
+                        
+                        testCases = testCases + 1
                     
-                    ResultVals = {
-                        "Number of X Variables": numVars,
-                        "Count of Usable Radars": results.nobs,
-                        "Duration": yDur,
-                        "Parameters": xParams,
-                        "R-Squared": results.rsquared,
-                        "Adj R-Squared": results.rsquared_adj,
-                        "F Test": results.fvalue,
-                        "Prob(F Test)": results.f_pvalue,
-                        "Model Degrees of Freedom": results.df_model,
-                        "Residual Degrees of Freedom": results.df_resid,
-                        "Parameter Coefficients": paramCoeff,
-                        "Parameter p-values": paramPvals,
-                        "Parameter t-values": paramTvals,
-                        "Parameter Std Err": paramStdErr,
-                        "Model MSE": results.mse_model,
-                        "Residual MSE": results.mse_resid,
-                        "Total MSE": results.mse_total,
-                        "Model Type": results.model.__class__.__name__,
-                        "Sum of Squared Residuals": results.ssr,
-                        "Scale": results.scale,
-                        "AIC": results.aic,
-                        "BIC": results.bic,
-                        "Centered TSS": results.centered_tss,
-                        "Uncentered TSS": results.uncentered_tss,
-                        "Explained Sum of Squares": results.ess
-                        }
-                    
-                    ResultsDF = ResultsDF.append(ResultVals, ignore_index=True)
-                    
-                    if not os.path.isfile(ResultsFile):
-                        ResultsDF.tail(1).to_excel(writer, header=ResultsDF.columns, index=False)
                     else:
-                        ResultsDF.tail(1).to_excel(writer, startrow=len(ResultsDF), header=False, index=False)
-                    
-                    writer.save()
-                    
-                    testCases = testCases + 1
+                        skipCases = skipCases + 1
                 
                 else:
                     skipCases = skipCases + 1
-            
-            else:
-                skipCases = skipCases + 1
-            
-            print "Tested: %s, Skipped: %s" % (testCases,skipCases)
-    
-    numVars = numVars - 1
-       
-print "Done! :)"   
-pass
+                
+                print "Tested: %s, Skipped: %s" % (testCases,skipCases)
+        
+        numVars = numVars - 1
+           
+    print "Done! :)"   
+    pass
