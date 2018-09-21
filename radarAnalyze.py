@@ -13,13 +13,10 @@ import os
 
 if __name__ == '__main__':
     
-    RadarFile = "Data/2018-09-13 Radar SERs Data.xlsx"
+    RadarFile = "Data/2018-09-20 Radar SERs Data.xlsx"
     ResultsFile = "Results/%s-%s-%s Radar SERs Analysis %s%s.xlsx" % (strftime("%Y"),strftime("%m"),strftime("%d"),strftime("%H"),strftime("%M"))
     writer = pd.ExcelWriter(ResultsFile, engine='openpyxl')
     ResultsDF = pd.DataFrame()
-    
-    numVars = 3
-    numPoints = 10
     
     RadarDurs = pd.read_excel(RadarFile,sheet_name="Durations",index_col=0)
     RadarParams = pd.read_excel(RadarFile,sheet_name="Technical Parameters",index_col=0)
@@ -38,8 +35,14 @@ if __name__ == '__main__':
         RadarParams["sqrt(%s)"%col] = np.sqrt(RadarParams[col]).replace([np.inf, -np.inf],np.nan)
     '''
         
+    airborne_index = (RadarQuals['Platform Category'] == 'Airborne')
+    #Find some way to loop through the filter and change the sheet name
+        
     skipCases = 0
     testCases = 0
+    
+    numPoints = 7
+    numVars = 3
     
     while numVars >= 1:
         for i in RadarDurs.columns:
